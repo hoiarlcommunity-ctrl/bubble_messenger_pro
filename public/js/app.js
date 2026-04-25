@@ -918,7 +918,7 @@ function renderMessageNode(msg, allMessages) {
   }
 
   const reactions = document.createElement('div');
-  reactions.className = 'reactions';
+  reactions.className = 'reactions reactions-above';
   for (const r of msg.reactions || []) {
     const chip = document.createElement('button');
     chip.className = `reaction-chip ${r.mine ? 'mine' : ''}`;
@@ -927,7 +927,6 @@ function renderMessageNode(msg, allMessages) {
     chip.addEventListener('click', () => toggleReaction(msg, r.emoji, r.mine));
     reactions.appendChild(chip);
   }
-  if (reactions.childElementCount) bubble.appendChild(reactions);
 
   const meta = document.createElement('div');
   meta.className = 'msg-meta';
@@ -950,8 +949,13 @@ function renderMessageNode(msg, allMessages) {
     bubble.appendChild(tools);
   }
 
+  const stack = document.createElement('div');
+  stack.className = 'message-stack';
+  if (reactions.childElementCount) stack.appendChild(reactions);
+  stack.appendChild(bubble);
+
   row.appendChild(av);
-  row.appendChild(bubble);
+  row.appendChild(stack);
   return row;
 }
 
