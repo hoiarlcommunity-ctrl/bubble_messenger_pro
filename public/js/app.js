@@ -624,6 +624,13 @@ async function loadChats() {
   }
 }
 
+
+function chatTypeMeta(chat) {
+  if (chat.type === 'channel') return { key: 'channel', title: 'Каналы', badge: 'Канал', icon: '📣' };
+  if (chat.type === 'group') return { key: 'group', title: 'Группы', badge: 'Группа', icon: '👥' };
+  return { key: 'direct', title: 'Пользователи', badge: 'Личка', icon: '👤' };
+}
+
 function filteredChats() {
   const q = els.chatSearch.value.trim().toLowerCase();
   if (!q) return state.chats;
@@ -641,22 +648,51 @@ function renderChats() {
     return;
   }
 
-  for (const chat of chats) {
-    const item = document.createElement('article');
-    item.className = `dialog ${Number(chat.id) === Number(state.activeChatId) ? 'active' : ''}`;
-    item.style.setProperty('--row-index', String(els.chatList.children.length));
-    const isOnline = chat.otherUser && state.onlineUserIds.has(Number(chat.otherUser.id));
-    const avatarClass = chat.type === 'group' ? 'avatar blue' : 'avatar';
-    const preview = chat.lastMessage ? previewText(chat.lastMessage) : 'Нет сообщений';
-    const avatarUrl = chat.avatarUrl || chat.otherUser?.avatarUrl || '';
-    const onlineClass = isOnline && chat.otherUser?.showOnline !== false ? 'online-dot' : '';
-    item.innerHTML = `
-      ${avatarHtml(chat.title || 'Чат', avatarUrl, avatarClass, onlineClass)}
-      <div><strong>${escapeHtml(chat.title || 'Чат')}</strong><p>${escapeHtml(preview)}</p></div>
-      <div class="dialog-meta"><span>${fmtTime(chat.lastMessage?.createdAt || chat.updatedAt)}</span>${chat.unreadCount ? `<span class="count">${chat.unreadCount}</span>` : ''}</div>
-    `;
-    item.addEventListener('click', () => openChat(chat.id));
-    els.chatList.appendChild(item);
+  const groups = {
+    direct: chats.filter(chat => chat.type === 'direct'),
+    group: chats.filter(chat => chat.type === 'group'),
+    channel: chats.filter(chat => chat.type === 'channel')
+  };
+
+  const sections = [
+    { key: 'direct', title: 'Пользователи', icon: '👤' },
+    { key: 'group', title: 'Группы', icon: '👥' },
+    { key: 'channel', title: 'Каналы', icon: '📣' }
+  ];
+
+  for (const section of sections) {
+    const sectionChats = groups[section.key] || [];
+    if (!sectionChats.length) continue;
+
+    const header = document.createElement('div');
+    header.className = 'chat-section';
+    header.innerHTML = `<span class="chat-section-label">${section.icon} ${escapeHtml(section.title)}</span><span class="chat-section-count">${sectionChats.length}</span>`;
+    els.chatList.appendChild(header);
+
+    for (const chat of sectionChats) {
+      const item = document.createElement('article');
+      item.className = `dialog compact ${Number(chat.id) === Number(state.activeChatId) ? 'active' : ''} chat-kind-${chat.type || 'direct'}`;
+      item.style.setProperty('--row-index', String(els.chatList.children.length));
+      const metaInfo = chatTypeMeta(chat);
+      const isOnline = chat.otherUser && state.onlineUserIds.has(Number(chat.otherUser.id));
+      const avatarClass = chat.type === 'group' || chat.type === 'channel' ? 'avatar blue' : 'avatar';
+      const preview = chat.lastMessage ? previewText(chat.lastMessage) : 'Нет сообщений';
+      const avatarUrl = chat.avatarUrl || chat.otherUser?.avatarUrl || '';
+      const onlineClass = isOnline && chat.otherUser?.showOnline !== false ? 'online-dot' : '';
+      item.innerHTML = `
+        ${avatarHtml(chat.title || 'Чат', avatarUrl, avatarClass, onlineClass)}
+        <div class="dialog-main">
+          <div class="dialog-title-row">
+            <strong>${escapeHtml(chat.title || 'Чат')}</strong>
+            <span class="chat-kind-badge">${escapeHtml(metaInfo.badge)}</span>
+          </div>
+          <p>${escapeHtml(preview)}</p>
+        </div>
+        <div class="dialog-meta"><span>${fmtTime(chat.lastMessage?.createdAt || chat.updatedAt)}</span>${chat.unreadCount ? `<span class="count">${chat.unreadCount}</span>` : ''}</div>
+      `;
+      item.addEventListener('click', () => openChat(chat.id));
+      els.chatList.appendChild(item);
+    }
   }
 }
 

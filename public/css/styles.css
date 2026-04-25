@@ -1239,3 +1239,197 @@ body.dark-theme .skeleton {
     max-width: calc(100vw - 190px);
   }
 }
+
+
+
+/* v11: compact chat list and clear sections */
+.dialogs {
+  gap: 8px;
+}
+
+.chat-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0 0;
+  padding: 4px 4px 0;
+}
+
+.chat-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+.chat-section-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,.72);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.dialog.compact {
+  min-height: 72px;
+  padding: 9px 10px;
+  border-radius: 18px;
+  grid-template-columns: 48px minmax(0, 1fr) max-content;
+  gap: 10px;
+}
+
+.dialog.compact .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 17px;
+  font-size: 16px;
+}
+
+.dialog-main {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dialog-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin-bottom: 3px;
+}
+
+.dialog.compact strong {
+  font-size: 14px;
+  line-height: 1.15;
+  margin-bottom: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog.compact p {
+  font-size: 12px;
+  line-height: 1.2;
+  margin: 0;
+  max-width: 100%;
+}
+
+.chat-kind-badge {
+  flex: 0 0 auto;
+  max-width: 92px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(255,138,61,.12);
+  color: var(--orange);
+  border: 1px solid rgba(255,138,61,.16);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.chat-kind-direct .chat-kind-badge {
+  background: rgba(0, 118, 255, .10);
+  border-color: rgba(0, 118, 255, .14);
+  color: #2369d1;
+}
+
+.chat-kind-group .chat-kind-badge {
+  background: rgba(86, 87, 214, .12);
+  border-color: rgba(86, 87, 214, .15);
+  color: #4e50c8;
+}
+
+.chat-kind-channel .chat-kind-badge {
+  background: rgba(255, 108, 168, .12);
+  border-color: rgba(255, 108, 168, .16);
+  color: #d83b78;
+}
+
+.dialog.compact .dialog-meta {
+  gap: 6px;
+  font-size: 11px;
+}
+
+.dialog.compact .count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+@media (max-width: 780px) {
+  .dialogs {
+    gap: 7px;
+  }
+
+  .chat-section {
+    margin-top: 4px;
+    padding: 2px 2px 0;
+  }
+
+  .dialog.compact {
+    min-height: 66px;
+    padding: 8px 9px;
+    border-radius: 16px;
+    grid-template-columns: 44px minmax(0, 1fr) max-content;
+    gap: 9px;
+  }
+
+  .dialog.compact .avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+  }
+
+  .chat-kind-badge {
+    padding: 3px 6px;
+    font-size: 9px;
+    max-width: 78px;
+  }
+
+  .dialog.compact strong {
+    font-size: 13px;
+  }
+
+  .dialog.compact p,
+  .dialog.compact .dialog-meta {
+    font-size: 11px;
+  }
+}
+
+body.dark-theme .chat-section-count {
+  background: rgba(255,255,255,.05);
+  border-color: var(--line);
+}
+
+body.dark-theme .chat-kind-direct .chat-kind-badge {
+  background: rgba(88, 177, 255, .16);
+  border-color: rgba(88, 177, 255, .22);
+  color: #8dd1ff;
+}
+
+body.dark-theme .chat-kind-group .chat-kind-badge {
+  background: rgba(149, 118, 255, .16);
+  border-color: rgba(149, 118, 255, .22);
+  color: #b89fff;
+}
+
+body.dark-theme .chat-kind-channel .chat-kind-badge {
+  background: rgba(255, 118, 194, .16);
+  border-color: rgba(255, 118, 194, .22);
+  color: #ff9bcf;
+}
