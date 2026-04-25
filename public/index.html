@@ -55,7 +55,7 @@
           <div class="brand-icon">☁</div>
           Bubble
         </div>
-        <button id="newChatBtn" class="new-chat" title="Новый чат">+</button>
+        <button id="newChatBtn" class="new-chat" title="Новый чат" type="button">+</button>
       </div>
 
       <label class="search">
@@ -79,11 +79,11 @@
           </div>
         </div>
         <div class="header-actions">
-          <button id="audioCallBtn" class="round-btn" title="Аудиозвонок">📞</button>
-          <button id="videoCallBtn" class="round-btn" title="Видеозвонок">🎥</button>
-          <button id="searchMessagesBtn" class="round-btn" title="Поиск">🔍</button>
-          <button id="profileBtn" class="round-btn" title="Профиль">👤</button>
-          <button id="logoutBtn" class="round-btn" title="Выйти">⎋</button>
+          <button id="audioCallBtn" class="round-btn" title="Аудиозвонок" type="button">📞</button>
+          <button id="videoCallBtn" class="round-btn" title="Видеозвонок" type="button">🎥</button>
+          <button id="searchMessagesBtn" class="round-btn" title="Поиск" type="button">🔍</button>
+          <button id="profileBtn" class="round-btn" title="Профиль" type="button">👤</button>
+          <button id="logoutBtn" class="round-btn" title="Выйти" type="button">⎋</button>
         </div>
       </header>
 
@@ -125,13 +125,13 @@
       </div>
 
       <div class="side-title">Действия</div>
-      <button id="createGroupBtn" class="wide-action">Создать группу</button>
-      <button id="createChannelBtn" class="wide-action">Создать канал</button>
-      <button id="publicChannelsBtn" class="wide-action">Публичные каналы</button>
-      <button id="savedBtn" class="wide-action">Избранное</button>
-      <button id="themeBtn" class="wide-action">Тёмная тема</button>
-      <button id="editProfileBtn" class="wide-action">Редактировать профиль</button>
-      <button id="adminBtn" class="wide-action hidden">Админка</button>
+      <button id="createGroupBtn" class="wide-action" type="button">Создать группу</button>
+      <button id="createChannelBtn" class="wide-action" type="button">Создать канал</button>
+      <button id="publicChannelsBtn" class="wide-action" type="button">Публичные каналы</button>
+      <button id="savedBtn" class="wide-action" type="button">Избранное</button>
+      <button id="themeBtn" class="wide-action" type="button">Тёмная тема</button>
+      <button id="editProfileBtn" class="wide-action" type="button">Редактировать профиль</button>
+      <button id="adminBtn" class="wide-action hidden" type="button">Админка</button>
 
       <div class="side-title">Общие медиа</div>
       <div class="media-grid" id="mediaGrid">
@@ -147,11 +147,12 @@
       <div class="note"><strong>Голосовое</strong><span>Нажмите 🎙️, запишите и отправьте.</span></div>
       <div class="note"><strong>Видеокружок</strong><span>Нажмите 📹, разрешите камеру и микрофон.</span></div>
     </aside>
-  </main>
+    <button id="messageSoundBtn" type="button" class="floating-sound-toggle" title="Звук сообщений">🔊</button>
+</main>
 
   <section id="recordOverlay" class="record-overlay hidden">
     <div class="record-card">
-      <button id="closeRecord" class="record-close">×</button>
+      <button id="closeRecord" class="record-close" type="button">×</button>
       <h2 id="recordTitle">Запись</h2>
       <div id="recordTimer" class="record-timer">00:00</div>
       <video id="recordPreview" autoplay playsinline muted class="record-video hidden"></video>
@@ -185,7 +186,7 @@
   </section>
   <section id="modal" class="modal hidden">
     <div class="modal-card">
-      <button id="modalClose" class="modal-close">×</button>
+      <button id="modalClose" class="modal-close" type="button">×</button>
       <h2 id="modalTitle">Модальное окно</h2>
       <div id="modalBody"></div>
     </div>

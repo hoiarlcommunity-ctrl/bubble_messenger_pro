@@ -2174,3 +2174,65 @@ body.dark-theme .me .reactions.reactions-above .reaction-chip {
     line-height: 12px !important;
   }
 }
+
+
+
+/* v18: call audio accompaniment */
+#callSoundBtn {
+  min-width: 96px;
+}
+
+#callSoundBtn.muted {
+  opacity: .65;
+  background: rgba(44,33,24,.08);
+}
+
+body.dark-theme #callSoundBtn.muted {
+  background: rgba(255,255,255,.07);
+}
+
+.call-card.call-ringing {
+  animation: callRingingPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes callRingingPulse {
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 0 0 8px rgba(255,108,168,.10), 0 22px 60px rgba(255,108,168,.20); }
+}
+
+
+
+/* v19: message sounds and anti-reload hardening */
+.sound-toggle,
+.floating-sound-toggle {
+  transition: transform .15s ease, opacity .15s ease, background .15s ease;
+}
+
+.sound-toggle.muted,
+.floating-sound-toggle.muted {
+  opacity: .55;
+}
+
+.floating-sound-toggle {
+  position: fixed;
+  right: 14px;
+  bottom: 86px;
+  z-index: 80;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 16px;
+  background: white;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+body.dark-theme .floating-sound-toggle {
+  background: rgba(255,255,255,.08);
+  color: var(--ink);
+}
+
+.no-reload-hint {
+  font-size: 11px;
+  color: var(--muted);
+}

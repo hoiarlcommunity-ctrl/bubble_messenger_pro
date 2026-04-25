@@ -1146,6 +1146,7 @@ async function sendTextMessage(text) {
     }
     clearReply();
     clearDraft();
+    playMessageSound('sent');
   } finally {
     setComposeStatus('');
   }
@@ -1202,6 +1203,7 @@ async function uploadAndSendMedia(file, kind, durationSec = null, caption = '') 
     patchChatPreview(data.message);
     renderMessages();
     clearReply();
+    playMessageSound('sent');
   } finally {
     setComposeStatus('');
     hideTopProgress();
@@ -1300,6 +1302,7 @@ function openModal(title, contentBuilder) {
   els.modalBody.innerHTML = '';
   if (typeof contentBuilder === 'function') contentBuilder(els.modalBody);
   else if (contentBuilder instanceof Node) els.modalBody.appendChild(contentBuilder);
+  normalizeButtonsType(els.modalBody);
   els.modal.classList.remove('hidden');
   requestAnimationFrame(() => els.modal.classList.add('is-visible'));
 }
@@ -1930,6 +1933,238 @@ function createPeerConnection(targetUserId) {
 }
 
 
+
+function updateCallSoundButton() {
+  if (!els.callSoundBtn) return;
+  els.callSoundBtn.textContent = state.callSoundEnabled ? 'Звук: вкл' : 'Звук: выкл';
+  els.callSoundBtn.classList.toggle('muted', !state.callSoundEnabled);
+}
+
+function toggleCallSound() {
+  state.callSoundEnabled = !state.callSoundEnabled;
+  localStorage.setItem('bubble_call_sound_enabled', String(state.callSoundEnabled));
+  updateCallSoundButton();
+  if (!state.callSoundEnabled) stopCallAudio();
+  else if (state.callAudioMode) startCallAudio(state.callAudioMode);
+}
+
+function getCallAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!state.callAudioContext) state.callAudioContext = new AudioContextClass();
+  if (state.callAudioContext.state === 'suspended') state.callAudioContext.resume().catch(() => {});
+  return state.callAudioContext;
+}
+
+function stopCallAudio() {
+  if (state.callAudioTimer) clearTimeout(state.callAudioTimer);
+  state.callAudioTimer = null;
+  state.callAudioMode = '';
+  for (const node of state.callAudioNodes || []) {
+    try {
+      if (node.stop) node.stop(0);
+      if (node.disconnect) node.disconnect();
+    } catch (_) {}
+  }
+  state.callAudioNodes = [];
+}
+
+function playToneSequence(steps, gainValue = 0.055) {
+  if (!state.callSoundEnabled) return;
+  const ctx = getCallAudioContext();
+  if (!ctx) return;
+
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, ctx.currentTime);
+  master.gain.exponentialRampToValueAtTime(gainValue, ctx.currentTime + 0.018);
+  master.connect(ctx.destination);
+  state.callAudioNodes.push(master);
+
+  for (const step of steps) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = step.type || 'sine';
+    osc.frequency.setValueAtTime(step.freq, ctx.currentTime + step.start);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime + step.start);
+    gain.gain.exponentialRampToValueAtTime(1, ctx.currentTime + step.start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + step.start + step.duration);
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start(ctx.currentTime + step.start);
+    osc.stop(ctx.currentTime + step.start + step.duration + 0.03);
+    state.callAudioNodes.push(osc, gain);
+  }
+
+  const total = Math.max(...steps.map(s => s.start + s.duration), 0.2);
+  state.callAudioTimer = setTimeout(() => {
+    try { master.disconnect(); } catch (_) {}
+  }, Math.ceil((total + 0.2) * 1000));
+}
+
+function startCallAudio(mode) {
+  if (!state.callSoundEnabled) return;
+  stopCallAudio();
+  state.callAudioMode = mode;
+
+  const loop = () => {
+    if (!state.callAudioMode || state.callAudioMode !== mode || !state.callSoundEnabled) return;
+
+    if (mode === 'outgoing') {
+      playToneSequence([
+        { freq: 440, start: 0.00, duration: 0.22, type: 'sine' },
+        { freq: 554.37, start: 0.26, duration: 0.22, type: 'sine' },
+        { freq: 659.25, start: 0.52, duration: 0.28, type: 'sine' }
+      ], 0.05);
+      state.callAudioTimer = setTimeout(loop, 1900);
+      return;
+    }
+
+    if (mode === 'incoming') {
+      playToneSequence([
+        { freq: 880, start: 0.00, duration: 0.18, type: 'triangle' },
+        { freq: 660, start: 0.24, duration: 0.18, type: 'triangle' },
+        { freq: 880, start: 0.48, duration: 0.18, type: 'triangle' },
+        { freq: 660, start: 0.72, duration: 0.18, type: 'triangle' }
+      ], 0.065);
+      state.callAudioTimer = setTimeout(loop, 1550);
+      return;
+    }
+
+    if (mode === 'connecting') {
+      playToneSequence([
+        { freq: 392, start: 0.00, duration: 0.10, type: 'sine' },
+        { freq: 392, start: 0.20, duration: 0.10, type: 'sine' }
+      ], 0.035);
+      state.callAudioTimer = setTimeout(loop, 1400);
+    }
+  };
+
+  loop();
+}
+
+function playCallOneShot(type) {
+  if (!state.callSoundEnabled) return;
+  stopCallAudio();
+
+  if (type === 'connected') {
+    playToneSequence([
+      { freq: 523.25, start: 0.00, duration: 0.10, type: 'sine' },
+      { freq: 783.99, start: 0.12, duration: 0.14, type: 'sine' }
+    ], 0.055);
+    return;
+  }
+
+  if (type === 'ended') {
+    playToneSequence([
+      { freq: 392, start: 0.00, duration: 0.11, type: 'sine' },
+      { freq: 293.66, start: 0.14, duration: 0.16, type: 'sine' }
+    ], 0.05);
+    return;
+  }
+
+  if (type === 'failed') {
+    playToneSequence([
+      { freq: 220, start: 0.00, duration: 0.12, type: 'sawtooth' },
+      { freq: 196, start: 0.18, duration: 0.12, type: 'sawtooth' },
+      { freq: 174.61, start: 0.36, duration: 0.18, type: 'sawtooth' }
+    ], 0.035);
+  }
+}
+
+
+function updateMessageSoundButton() {
+  if (!els.messageSoundBtn) return;
+  els.messageSoundBtn.textContent = state.messageSoundEnabled ? '🔊' : '🔇';
+  els.messageSoundBtn.title = state.messageSoundEnabled ? 'Звук сообщений включён' : 'Звук сообщений выключен';
+  els.messageSoundBtn.classList.toggle('muted', !state.messageSoundEnabled);
+}
+
+function toggleMessageSound() {
+  state.messageSoundEnabled = !state.messageSoundEnabled;
+  localStorage.setItem('bubble_message_sound_enabled', String(state.messageSoundEnabled));
+  updateMessageSoundButton();
+  if (state.messageSoundEnabled) playMessageSound('toggle');
+}
+
+function playMessageSound(kind = 'incoming') {
+  if (!state.messageSoundEnabled) return;
+  const now = Date.now();
+  if (kind === 'incoming' && now - state.lastMessageSoundAt < 650) return;
+  state.lastMessageSoundAt = now;
+
+  // Reuse Web Audio API from call sounds if available.
+  const ctx = getCallAudioContext ? getCallAudioContext() : null;
+  if (!ctx) return;
+
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, ctx.currentTime);
+  master.gain.exponentialRampToValueAtTime(kind === 'sent' ? 0.032 : 0.045, ctx.currentTime + 0.012);
+  master.connect(ctx.destination);
+
+  const steps = kind === 'sent'
+    ? [
+        { freq: 523.25, start: 0.00, duration: 0.055, type: 'sine' },
+        { freq: 659.25, start: 0.065, duration: 0.075, type: 'sine' }
+      ]
+    : kind === 'toggle'
+      ? [{ freq: 659.25, start: 0.00, duration: 0.06, type: 'sine' }]
+      : [
+          { freq: 880, start: 0.00, duration: 0.070, type: 'triangle' },
+          { freq: 1174.66, start: 0.085, duration: 0.095, type: 'triangle' }
+        ];
+
+  const nodes = [master];
+  for (const step of steps) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = step.type;
+    osc.frequency.setValueAtTime(step.freq, ctx.currentTime + step.start);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime + step.start);
+    gain.gain.exponentialRampToValueAtTime(1, ctx.currentTime + step.start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + step.start + step.duration);
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start(ctx.currentTime + step.start);
+    osc.stop(ctx.currentTime + step.start + step.duration + 0.025);
+    nodes.push(osc, gain);
+  }
+
+  setTimeout(() => {
+    for (const node of nodes) {
+      try { node.disconnect(); } catch (_) {}
+    }
+  }, 450);
+}
+
+function normalizeButtonsType(root = document) {
+  root.querySelectorAll('button:not([type])').forEach((button) => {
+    button.type = 'button';
+  });
+}
+
+function preventAccidentalReloads() {
+  normalizeButtonsType(document);
+
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (button && !button.type) button.type = 'button';
+
+    const anchor = event.target.closest('a[href="#"], a[href=""], a[href^="javascript:"]');
+    if (anchor) {
+      event.preventDefault();
+    }
+  }, true);
+
+  document.addEventListener('submit', (event) => {
+    // Only known forms should submit through JS handlers.
+    const form = event.target;
+    const allowedIds = new Set(['loginForm', 'registerForm', 'messageForm']);
+    if (form && form.id && !allowedIds.has(form.id)) {
+      event.preventDefault();
+    }
+  }, true);
+}
+
 function setCallStatus(text, type = 'info') {
   if (!els.callStatus) return;
   els.callStatus.textContent = text;
@@ -1945,6 +2180,7 @@ function startCallConnectTimer() {
       setCallStatus('Не удалось соединиться. Частая причина — нет TURN-сервера или пользователи в разных сетях.', 'error');
       toast('Звонок завис на соединении. Настройте TURN-сервер для стабильных звонков.');
       showCallRetryButton(true);
+      playCallOneShot('failed');
     }
   }, 18000);
 }
@@ -2046,6 +2282,7 @@ async function handleCallIce(payload) {
 }
 
 function endCall(notify = true, message = '') {
+  stopCallAudio();
   clearCallConnectTimer();
   showCallRetryButton(false);
   const remote = state.call.remoteUserId;
