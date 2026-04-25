@@ -1929,6 +1929,56 @@ function createPeerConnection(targetUserId) {
   return pc;
 }
 
+
+function setCallStatus(text, type = 'info') {
+  if (!els.callStatus) return;
+  els.callStatus.textContent = text;
+  els.callStatus.dataset.type = type;
+}
+
+function startCallConnectTimer() {
+  clearCallConnectTimer();
+  state.callConnectTimer = setTimeout(() => {
+    const pc = state.peerConnection;
+    const connected = pc && ['connected', 'completed'].includes(pc.iceConnectionState);
+    if (!connected && state.callActive) {
+      setCallStatus('Не удалось соединиться. Частая причина — нет TURN-сервера или пользователи в разных сетях.', 'error');
+      toast('Звонок завис на соединении. Настройте TURN-сервер для стабильных звонков.');
+      showCallRetryButton(true);
+    }
+  }, 18000);
+}
+
+function clearCallConnectTimer() {
+  if (state.callConnectTimer) clearTimeout(state.callConnectTimer);
+  state.callConnectTimer = null;
+}
+
+function showCallRetryButton(show) {
+  if (!els.retryCallBtn) return;
+  els.retryCallBtn.classList.toggle('hidden', !show);
+}
+
+function describeIceState(stateName) {
+  const map = {
+    new: 'Готовим соединение...',
+    checking: 'Соединяем собеседников...',
+    connected: 'Соединение установлено',
+    completed: 'Соединение установлено',
+    disconnected: 'Соединение прервано. Пробуем восстановить...',
+    failed: 'Не удалось установить соединение',
+    closed: 'Звонок завершён'
+  };
+  return map[stateName] || `Статус соединения: ${stateName}`;
+}
+
+function hasTurnServer() {
+  return (state.iceServers || []).some((server) => {
+    const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+    return urls.some((url) => String(url || '').startsWith('turn:') || String(url || '').startsWith('turns:'));
+  });
+}
+
 async function startDirectCall(kind) {
   const peer = currentDirectPeer();
   if (!peer) return toast('Звонки доступны в личных чатах');
@@ -1953,6 +2003,7 @@ async function startDirectCall(kind) {
 }
 
 async function handleIncomingCall(payload) {
+  state.lastCallDirection = 'incoming';
   if (state.call.active) {
     state.socket?.emit('call:reject', { targetUserId: payload.fromUser.id, callId: payload.callId });
     return;
@@ -1962,6 +2013,8 @@ async function handleIncomingCall(payload) {
   state.call.remoteUserId = payload.fromUser.id;
   state.call.callId = payload.callId;
   setCallUi({ title: `Входящий ${payload.kind === 'video' ? 'видеозвонок' : 'звонок'}`, status: payload.fromUser.displayName, incoming: true, kind: payload.kind });
+
+  startCallConnectTimer();
 }
 
 async function acceptIncomingCall() {
@@ -1993,6 +2046,8 @@ async function handleCallIce(payload) {
 }
 
 function endCall(notify = true, message = '') {
+  clearCallConnectTimer();
+  showCallRetryButton(false);
   const remote = state.call.remoteUserId;
   const callId = state.call.callId;
   if (notify && remote && state.socket) state.socket.emit('call:end', { targetUserId: remote, callId });
