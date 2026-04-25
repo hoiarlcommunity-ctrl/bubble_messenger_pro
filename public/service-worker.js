@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bubble-messenger-pro-v9-animations';
+const CACHE_NAME = 'bubble-messenger-pro-v20-dense-section-flow';
 const ASSETS = ['/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg'];
 
 self.addEventListener('install', (event) => {

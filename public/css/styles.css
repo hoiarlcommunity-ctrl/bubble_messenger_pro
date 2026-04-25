@@ -2236,3 +2236,75 @@ body.dark-theme .floating-sound-toggle {
   font-size: 11px;
   color: var(--muted);
 }
+
+
+
+/* v20: section items flow directly under headers with minimal spacing */
+.dialogs {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  align-content: flex-start !important;
+  gap: 1px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding-right: 0 !important;
+}
+
+.chat-section {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex: 0 0 auto !important;
+  min-height: 10px !important;
+  height: 10px !important;
+  margin: 1px 0 0 !important;
+  padding: 0 2px !important;
+}
+
+.chat-section + .dialog,
+.chat-section + .dialog.compact {
+  margin-top: 0 !important;
+}
+
+.dialog,
+.dialog.compact {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+
+.dialog + .dialog,
+.dialog.compact + .dialog.compact,
+.dialog + .dialog.compact,
+.dialog.compact + .dialog {
+  margin-top: 1px !important;
+}
+
+@media (max-width: 780px) {
+  .dialogs {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    align-content: flex-start !important;
+    gap: 1px !important;
+    padding-right: 0 !important;
+  }
+
+  .chat-section {
+    min-height: 9px !important;
+    height: 9px !important;
+    margin: 1px 0 0 !important;
+    padding: 0 1px !important;
+  }
+
+  .chat-section + .dialog,
+  .chat-section + .dialog.compact,
+  .dialog + .dialog,
+  .dialog.compact + .dialog.compact,
+  .dialog + .dialog.compact,
+  .dialog.compact + .dialog {
+    margin-top: 1px !important;
+  }
+}
