@@ -48,6 +48,9 @@ const state = {
 const els = {
   authScreen: $('#authScreen'),
   appShell: $('#appShell'),
+  appLoader: $('#appLoader'),
+  loaderText: $('#loaderText'),
+  topProgress: $('#topProgress'),
   loginTab: $('#loginTab'),
   registerTab: $('#registerTab'),
   loginForm: $('#loginForm'),
@@ -173,6 +176,126 @@ function clearAuthError() {
   els.authError.textContent = '';
 }
 
+function showGlobalLoader(text = 'Загружаем...') {
+  if (!els.appLoader) return;
+  if (els.loaderText) els.loaderText.textContent = text;
+  els.appLoader.classList.remove('hidden');
+  requestAnimationFrame(() => els.appLoader.classList.add('is-visible'));
+}
+
+function updateGlobalLoader(text) {
+  if (els.loaderText && text) els.loaderText.textContent = text;
+}
+
+function hideGlobalLoader() {
+  if (!els.appLoader) return;
+  els.appLoader.classList.remove('is-visible');
+  setTimeout(() => els.appLoader.classList.add('hidden'), 180);
+}
+
+function showTopProgress(text = 'Выполняется...') {
+  if (!els.topProgress) return;
+  const label = els.topProgress.querySelector('span');
+  if (label) label.textContent = text;
+  els.topProgress.classList.remove('hidden');
+  requestAnimationFrame(() => els.topProgress.classList.add('is-visible'));
+}
+
+function hideTopProgress() {
+  if (!els.topProgress) return;
+  els.topProgress.classList.remove('is-visible');
+  setTimeout(() => els.topProgress.classList.add('hidden'), 180);
+}
+
+function setButtonLoading(button, loading, label = '') {
+  if (!button) return;
+  if (loading) {
+    if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+    button.disabled = true;
+    button.classList.add('is-loading');
+    button.innerHTML = `<span class="btn-spinner"></span>${label ? `<span>${escapeHtml(label)}</span>` : ''}`;
+  } else {
+    button.disabled = false;
+    button.classList.remove('is-loading');
+    if (button.dataset.originalHtml) {
+      button.innerHTML = button.dataset.originalHtml;
+      delete button.dataset.originalHtml;
+    }
+  }
+}
+
+function setFormBusy(form, busy) {
+  if (!form) return;
+  form.classList.toggle('is-busy', busy);
+  form.querySelectorAll('input, textarea, select, button').forEach((control) => {
+    if (control.classList.contains('auth-link')) return;
+    control.disabled = busy;
+  });
+}
+
+async function withButtonLoading(button, label, task) {
+  setButtonLoading(button, true, label);
+  try {
+    return await task();
+  } finally {
+    setButtonLoading(button, false);
+  }
+}
+
+function setComposeStatus(text = '') {
+  if (!els.typingLine) return;
+  if (text) {
+    els.typingLine.classList.add('status-line');
+    els.typingLine.innerHTML = `<span class="tiny-spinner"></span>${escapeHtml(text)}`;
+  } else {
+    els.typingLine.classList.remove('status-line');
+    els.typingLine.textContent = '';
+  }
+}
+
+function renderChatSkeleton(count = 6) {
+  if (!els.chatList) return;
+  els.chatList.innerHTML = '';
+  for (let i = 0; i < count; i += 1) {
+    const row = document.createElement('article');
+    row.className = 'dialog skeleton-dialog';
+    row.innerHTML = `
+      <div class="skeleton skeleton-avatar"></div>
+      <div>
+        <div class="skeleton skeleton-line wide"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>
+      <div class="skeleton skeleton-badge"></div>
+    `;
+    els.chatList.appendChild(row);
+  }
+}
+
+function renderMessageSkeleton(count = 5) {
+  if (!els.messageList) return;
+  els.messageList.innerHTML = '';
+  for (let i = 0; i < count; i += 1) {
+    const row = document.createElement('article');
+    row.className = `msg skeleton-message ${i % 2 ? 'me' : ''}`;
+    row.innerHTML = `
+      <div class="skeleton skeleton-small-avatar"></div>
+      <div class="bubble skeleton-bubble">
+        <div class="skeleton skeleton-line wide"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line short"></div>
+      </div>
+    `;
+    els.messageList.appendChild(row);
+  }
+}
+
+function markPageTransition(target = document.body) {
+  target.classList.remove('ui-transition');
+  void target.offsetWidth;
+  target.classList.add('ui-transition');
+}
+
+
 async function api(path, options = {}) {
   const headers = new Headers(options.headers || {});
   if (!(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
@@ -214,8 +337,10 @@ function setAuthMode(mode) {
 }
 
 function showApp() {
+  els.authScreen.classList.add('auth-exit');
   els.authScreen.classList.add('hidden');
   els.appShell.classList.remove('hidden');
+  markPageTransition(els.appShell);
   els.myName.textContent = state.user.displayName;
   els.myStatus.textContent = state.user.statusText || `@${state.user.username}`;
   setAvatar(els.myAvatar, state.user.displayName, state.user.avatarUrl, 'online-dot');
@@ -225,6 +350,8 @@ function showApp() {
 function showAuth() {
   els.appShell.classList.add('hidden');
   els.authScreen.classList.remove('hidden');
+  els.authScreen.classList.remove('auth-exit');
+  markPageTransition(els.authScreen);
 }
 
 function applyTheme() {
@@ -332,11 +459,20 @@ async function loadIceServers() {
 }
 
 async function afterAuth() {
+  showGlobalLoader('Входим в аккаунт...');
   showApp();
   requestNotificationPermission();
-  await loadIceServers();
-  connectSocket();
-  await loadChats();
+  try {
+    updateGlobalLoader('Настраиваем звонки...');
+    await loadIceServers();
+    updateGlobalLoader('Подключаем realtime...');
+    connectSocket();
+    updateGlobalLoader('Загружаем список чатов...');
+    renderChatSkeleton();
+    await loadChats();
+  } finally {
+    hideGlobalLoader();
+  }
 }
 
 
@@ -476,10 +612,16 @@ function patchChatPreview(message) {
 }
 
 async function loadChats() {
-  const data = await api('/api/chats');
-  state.chats = data.chats || [];
-  renderChats();
-  renderStories();
+  showTopProgress('Загружаем чаты...');
+  if (!state.chats.length) renderChatSkeleton();
+  try {
+    const data = await api('/api/chats');
+    state.chats = data.chats || [];
+    renderChats();
+    renderStories();
+  } finally {
+    hideTopProgress();
+  }
 }
 
 function filteredChats() {
@@ -502,6 +644,7 @@ function renderChats() {
   for (const chat of chats) {
     const item = document.createElement('article');
     item.className = `dialog ${Number(chat.id) === Number(state.activeChatId) ? 'active' : ''}`;
+    item.style.setProperty('--row-index', String(els.chatList.children.length));
     const isOnline = chat.otherUser && state.onlineUserIds.has(Number(chat.otherUser.id));
     const avatarClass = chat.type === 'group' ? 'avatar blue' : 'avatar';
     const preview = chat.lastMessage ? previewText(chat.lastMessage) : 'Нет сообщений';
@@ -562,6 +705,8 @@ async function loadChatDetails(chatId, force = false) {
 
 async function openChat(chatId) {
   state.activeChatId = Number(chatId);
+  showTopProgress('Открываем чат...');
+  renderMessageSkeleton();
   const chat = state.chats.find(c => Number(c.id) === Number(chatId));
   if (chat) chat.unreadCount = 0;
   els.appShell.dataset.mobileView = 'chat';
@@ -579,6 +724,7 @@ async function openChat(chatId) {
   const last = msgs[msgs.length - 1];
   if (last) markRead(last.id);
   state.socket?.emit('chat:join', { chatId: Number(chatId) });
+  hideTopProgress();
 }
 
 function updateActiveHeader() {
@@ -633,9 +779,11 @@ function renderMessages() {
   date.textContent = 'Сообщения';
   els.messageList.appendChild(date);
 
-  for (const msg of messages) {
-    els.messageList.appendChild(renderMessageNode(msg, messages));
-  }
+  messages.forEach((msg, index) => {
+    const node = renderMessageNode(msg, messages);
+    node.style.setProperty('--msg-index', String(Math.min(index, 8)));
+    els.messageList.appendChild(node);
+  });
   els.messageList.scrollTop = els.messageList.scrollHeight;
 }
 
@@ -863,17 +1011,27 @@ async function pinMessage(msg) {
 async function sendTextMessage(text) {
   if (!state.activeChatId || !text.trim()) return;
   const payload = { chatId: state.activeChatId, body: text.trim(), replyToId: state.replyTo?.id || null };
-  if (state.socket?.connected) {
-    state.socket.emit('chat:send', payload, (res) => {
-      if (!res?.ok) toast(res?.error || 'Не удалось отправить');
-    });
-  } else {
-    const data = await api(`/api/chats/${state.activeChatId}/messages`, { method: 'POST', body: JSON.stringify(payload) });
-    addOrUpdateMessage(data.message);
-    renderMessages();
+  setComposeStatus('Отправляем сообщение...');
+  try {
+    if (state.socket?.connected) {
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Сервер долго не отвечает. Проверьте соединение.')), 12000);
+        state.socket.emit('chat:send', payload, (res) => {
+          clearTimeout(timer);
+          if (!res?.ok) reject(new Error(res?.error || 'Не удалось отправить'));
+          else resolve(res);
+        });
+      });
+    } else {
+      const data = await api(`/api/chats/${state.activeChatId}/messages`, { method: 'POST', body: JSON.stringify(payload) });
+      addOrUpdateMessage(data.message);
+      renderMessages();
+    }
+    clearReply();
+    clearDraft();
+  } finally {
+    setComposeStatus('');
   }
-  clearReply();
-  clearDraft();
 }
 
 async function markRead(messageId) {
@@ -903,25 +1061,34 @@ function notifyTyping() {
 
 async function uploadAndSendMedia(file, kind, durationSec = null, caption = '') {
   if (!state.activeChatId) return toast('Сначала выберите чат');
-  const form = new FormData();
-  form.append('file', file);
-  form.append('chatId', String(state.activeChatId));
-  form.append('kind', kind);
-  if (durationSec) form.append('durationSec', String(Math.round(durationSec)));
-  const upload = await api('/api/media/upload', { method: 'POST', body: form });
-  const data = await api(`/api/chats/${state.activeChatId}/messages`, {
-    method: 'POST',
-    body: JSON.stringify({
-      type: kind,
-      mediaId: upload.media.id,
-      body: caption,
-      replyToId: state.replyTo?.id || null
-    })
-  });
-  addOrUpdateMessage(data.message);
-  patchChatPreview(data.message);
-  renderMessages();
-  clearReply();
+  const label = kind === 'audio' ? 'Загружаем голосовое...' : kind === 'video' ? 'Загружаем видеокружок...' : kind === 'image' ? 'Загружаем изображение...' : 'Загружаем файл...';
+  showTopProgress(label);
+  setComposeStatus(label);
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('chatId', String(state.activeChatId));
+    form.append('kind', kind);
+    if (durationSec) form.append('durationSec', String(Math.round(durationSec)));
+    const upload = await api('/api/media/upload', { method: 'POST', body: form });
+    setComposeStatus('Создаём сообщение...');
+    const data = await api(`/api/chats/${state.activeChatId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: kind,
+        mediaId: upload.media.id,
+        body: caption,
+        replyToId: state.replyTo?.id || null
+      })
+    });
+    addOrUpdateMessage(data.message);
+    patchChatPreview(data.message);
+    renderMessages();
+    clearReply();
+  } finally {
+    setComposeStatus('');
+    hideTopProgress();
+  }
 }
 
 async function startRecording(kind) {
@@ -929,6 +1096,7 @@ async function startRecording(kind) {
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     return toast('Браузер не поддерживает запись MediaRecorder');
   }
+  showTopProgress(kind === 'video' ? 'Открываем камеру...' : 'Открываем микрофон...');
   state.recordKind = kind;
   state.recordCancelled = false;
   state.recordChunks = [];
@@ -966,6 +1134,7 @@ function pickMimeType(kind) {
 
 function openRecordOverlay(kind) {
   els.recordOverlay.classList.remove('hidden');
+  requestAnimationFrame(() => els.recordOverlay.classList.add('is-visible'));
   els.recordTitle.textContent = kind === 'video' ? 'Запись видеокружка' : 'Запись голосового';
   els.recordPreview.classList.toggle('hidden', kind !== 'video');
   els.recordAudioIcon.classList.toggle('hidden', kind === 'video');
@@ -993,6 +1162,8 @@ async function onRecordStop() {
     toast(kind === 'video' ? 'Видеокружок отправлен' : 'Голосовое отправлено');
   } catch (error) {
     toast(error.message);
+  } finally {
+    hideTopProgress();
   }
 }
 
@@ -1003,6 +1174,7 @@ function cleanupRecording() {
   state.recordStream = null;
   state.recorder = null;
   els.recordPreview.srcObject = null;
+  els.recordOverlay.classList.remove('is-visible');
   els.recordOverlay.classList.add('hidden');
 }
 
@@ -1012,11 +1184,15 @@ function openModal(title, contentBuilder) {
   if (typeof contentBuilder === 'function') contentBuilder(els.modalBody);
   else if (contentBuilder instanceof Node) els.modalBody.appendChild(contentBuilder);
   els.modal.classList.remove('hidden');
+  requestAnimationFrame(() => els.modal.classList.add('is-visible'));
 }
 
 function closeModal() {
-  els.modal.classList.add('hidden');
-  els.modalBody.innerHTML = '';
+  els.modal.classList.remove('is-visible');
+  setTimeout(() => {
+    els.modal.classList.add('hidden');
+    els.modalBody.innerHTML = '';
+  }, 140);
 }
 
 function openNewChatModal() {
@@ -1845,35 +2021,68 @@ function bindEvents() {
     e.preventDefault();
     clearAuthError();
     const fd = new FormData(els.loginForm);
-    try { await login(fd.get('username'), fd.get('password')); }
-    catch (error) { showAuthError(error.message); }
+    const btn = e.submitter || els.loginForm.querySelector('button[type="submit"]');
+    try {
+      await withButtonLoading(btn, 'Входим...', async () => {
+        setFormBusy(els.loginForm, true);
+        await login(fd.get('username'), fd.get('password'));
+      });
+    } catch (error) {
+      showAuthError(error.message);
+    } finally {
+      setFormBusy(els.loginForm, false);
+    }
   });
   els.registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearAuthError();
     const fd = new FormData(els.registerForm);
-    try { await register(fd.get('displayName'), fd.get('username'), fd.get('email'), fd.get('password')); }
-    catch (error) { showAuthError(error.message); }
+    const btn = e.submitter || els.registerForm.querySelector('button[type="submit"]');
+    try {
+      await withButtonLoading(btn, 'Создаём аккаунт...', async () => {
+        setFormBusy(els.registerForm, true);
+        await register(fd.get('displayName'), fd.get('username'), fd.get('email'), fd.get('password'));
+      });
+    } catch (error) {
+      showAuthError(error.message);
+    } finally {
+      setFormBusy(els.registerForm, false);
+    }
   });
   els.forgotPasswordBtn?.addEventListener('click', async () => {
     clearAuthError();
     const login = prompt('Введите логин или email для восстановления пароля');
     if (!login) return;
-    try { await requestPasswordReset(login); }
-    catch (error) { showAuthError(error.message); }
+    try {
+      await withButtonLoading(els.forgotPasswordBtn, 'Отправляем ссылку...', () => requestPasswordReset(login));
+    } catch (error) {
+      showAuthError(error.message);
+    }
   });
 
   els.messageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = els.messageInput.value;
+    if (!text.trim()) return;
+    const sendBtn = e.submitter || els.messageForm.querySelector('.send');
     els.messageInput.value = '';
-    try { await sendTextMessage(text); }
-    catch (error) { toast(error.message); }
+    els.messageForm.classList.add('is-sending');
+    try {
+      await withButtonLoading(sendBtn, '', () => sendTextMessage(text));
+    } catch (error) {
+      els.messageInput.value = text;
+      toast(error.message);
+    } finally {
+      els.messageForm.classList.remove('is-sending');
+    }
   });
   els.messageInput.addEventListener('input', () => { notifyTyping(); saveDraft(); });
   els.emojiBtn?.addEventListener('click', openEmojiPicker);
   els.cancelReply.addEventListener('click', clearReply);
-  els.backToChats.addEventListener('click', () => { els.appShell.dataset.mobileView = 'list'; });
+  els.backToChats.addEventListener('click', () => {
+    els.appShell.dataset.mobileView = 'list';
+    markPageTransition(els.appShell);
+  });
   els.chatSearch.addEventListener('input', renderChats);
   els.searchMessagesBtn?.addEventListener('click', openSearchMessagesModal);
   els.newChatBtn?.addEventListener('click', openNewChatModal);
@@ -1894,17 +2103,21 @@ function bindEvents() {
   els.profileBtn?.addEventListener('click', openChatInfoModal);
   els.adminBtn?.addEventListener('click', openAdminModal);
   els.logoutBtn.addEventListener('click', async () => {
-    await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
-    localStorage.removeItem('bubble_access_token');
-    state.token = '';
-    state.user = null;
-    state.socket?.disconnect();
-    showAuth();
+    await withButtonLoading(els.logoutBtn, '', async () => {
+      showTopProgress('Выходим из аккаунта...');
+      await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+      localStorage.removeItem('bubble_access_token');
+      state.token = '';
+      state.user = null;
+      state.socket?.disconnect();
+      showAuth();
+      hideTopProgress();
+    });
   });
   els.modalClose.addEventListener('click', closeModal);
   els.modal.addEventListener('click', (e) => { if (e.target === els.modal) closeModal(); });
-  els.voiceBtn.addEventListener('click', () => startRecording('audio'));
-  els.videoBtn.addEventListener('click', () => startRecording('video'));
+  els.voiceBtn.addEventListener('click', () => withButtonLoading(els.voiceBtn, '', () => startRecording('audio')));
+  els.videoBtn.addEventListener('click', () => withButtonLoading(els.videoBtn, '', () => startRecording('video')));
   els.stopRecord.addEventListener('click', () => stopRecording(false));
   els.cancelRecord.addEventListener('click', () => stopRecording(true));
   els.closeRecord.addEventListener('click', () => stopRecording(true));
@@ -1913,7 +2126,7 @@ function bindEvents() {
     const file = els.fileInput.files[0];
     if (!file) return;
     const kind = file.type.startsWith('image/') ? 'image' : 'file';
-    try { await uploadAndSendMedia(file, kind); }
+    try { await withButtonLoading(els.attachBtn, '', () => uploadAndSendMedia(file, kind)); }
     catch (error) { toast(error.message); }
     finally { els.fileInput.value = ''; }
   });
@@ -1930,12 +2143,14 @@ async function bootstrap() {
     const ok = await refreshToken();
     if (!ok) return showAuth();
   }
+  showGlobalLoader('Восстанавливаем сессию...');
   try {
     const data = await api('/api/me');
     state.user = data.user;
     await afterAuth();
     await joinInviteFromUrl();
   } catch (_) {
+    hideGlobalLoader();
     showAuth();
   }
 }

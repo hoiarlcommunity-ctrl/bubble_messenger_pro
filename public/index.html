@@ -9,6 +9,19 @@
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
+  <div id="topProgress" class="top-progress hidden">
+    <span></span>
+  </div>
+
+  <div id="appLoader" class="app-loader hidden" aria-live="polite" aria-busy="true">
+    <div class="loader-card">
+      <div class="loader-logo">☁</div>
+      <div class="loader-ring"></div>
+      <strong id="loaderText">Загружаем...</strong>
+      <p>Пожалуйста, подождите. Интерфейс готовится к работе.</p>
+    </div>
+  </div>
+
   <section id="authScreen" class="auth-screen">
     <div class="auth-card">
       <div class="auth-logo">☁</div>
