@@ -919,7 +919,10 @@ function renderMessageNode(msg, allMessages) {
     tools.className = 'msg-tools';
     tools.append(toolButton('↩', 'Ответить', () => setReply(msg)));
     tools.append(toolButton('⭐', 'В избранное', () => saveMessage(msg)));
-    tools.append(toolButton('🔥', 'Реакция', () => quickReact(msg)));
+    tools.append(toolButton('🔥', 'Реакция', (event) => {
+      event?.stopPropagation?.();
+      quickReact(msg, bubble, mine);
+    }));
     if (currentChatRoleCanModerate()) tools.append(toolButton('📌', 'Закрепить', () => pinMessage(msg)));
     if (mine && msg.type === 'text') tools.append(toolButton('✎', 'Редактировать', () => editMessage(msg)));
     if (mine || currentChatRoleCanModerate()) tools.append(toolButton('🗑', 'Удалить', () => deleteMessage(msg)));
@@ -960,7 +963,7 @@ function toolButton(label, title, onClick) {
   btn.type = 'button';
   btn.title = title;
   btn.textContent = label;
-  btn.addEventListener('click', onClick);
+  btn.addEventListener('click', (event) => onClick(event));
   return btn;
 }
 
@@ -997,10 +1000,49 @@ function clearReply() {
   els.replyText.textContent = '';
 }
 
-async function quickReact(msg) {
-  const emoji = prompt('Введите реакцию', '🔥');
-  if (!emoji) return;
-  await toggleReaction(msg, emoji, false);
+
+function closeReactionPicker() {
+  state.openReactionPickerMessageId = null;
+  document.querySelectorAll('.reaction-picker').forEach((node) => node.remove());
+}
+
+function buildReactionPicker(msg, bubble, mine) {
+  closeReactionPicker();
+  state.openReactionPickerMessageId = Number(msg.id);
+
+  const picker = document.createElement('div');
+  picker.className = `reaction-picker ${mine ? 'for-me' : 'for-peer'}`;
+  picker.addEventListener('click', (e) => e.stopPropagation());
+
+  const emojis = ['👍', '❤️', '🔥', '😂', '😮', '👏', '🎉', '😢', '👀', '✅'];
+  for (const emoji of emojis) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'reaction-option';
+    btn.textContent = emoji;
+    btn.title = `Реакция ${emoji}`;
+    const alreadyMine = Boolean((msg.reactions || []).find((r) => r.emoji === emoji && r.mine));
+    if (alreadyMine) btn.classList.add('active');
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await toggleReaction(msg, emoji, alreadyMine);
+      closeReactionPicker();
+    });
+    picker.appendChild(btn);
+  }
+
+  bubble.appendChild(picker);
+  requestAnimationFrame(() => picker.classList.add('is-visible'));
+}
+
+async function quickReact(msg, bubble, mine) {
+  if (!bubble) return;
+  const existing = bubble.querySelector('.reaction-picker');
+  if (existing) {
+    closeReactionPicker();
+    return;
+  }
+  buildReactionPicker(msg, bubble, mine);
 }
 
 async function toggleReaction(msg, emoji, mine) {
