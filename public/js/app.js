@@ -625,16 +625,34 @@ async function loadChats() {
 }
 
 
+
+function getCollapsedChatSections() {
+  if (!state.collapsedChatSections || typeof state.collapsedChatSections !== 'object') {
+    try {
+      state.collapsedChatSections = JSON.parse(localStorage.getItem('bubble_collapsed_chat_sections') || '{}') || {};
+    } catch (_) {
+      state.collapsedChatSections = {};
+    }
+  }
+  return state.collapsedChatSections;
+}
+
+function getChatType(chat) {
+  return ['direct', 'group', 'channel'].includes(chat?.type) ? chat.type : 'direct';
+}
+
 function chatTypeMeta(chat) {
-  if (chat.type === 'channel') return { key: 'channel', title: 'Каналы', badge: 'Канал', icon: '📣' };
-  if (chat.type === 'group') return { key: 'group', title: 'Группы', badge: 'Группа', icon: '👥' };
+  const type = getChatType(chat);
+  if (type === 'channel') return { key: 'channel', title: 'Каналы', badge: 'Канал', icon: '📣' };
+  if (type === 'group') return { key: 'group', title: 'Группы', badge: 'Группа', icon: '👥' };
   return { key: 'direct', title: 'Пользователи', badge: 'Личка', icon: '👤' };
 }
 
 
 function toggleChatSection(key) {
-  state.collapsedChatSections[key] = !state.collapsedChatSections[key];
-  localStorage.setItem('bubble_collapsed_chat_sections', JSON.stringify(state.collapsedChatSections));
+  const collapsed = getCollapsedChatSections();
+  collapsed[key] = !collapsed[key];
+  localStorage.setItem('bubble_collapsed_chat_sections', JSON.stringify(collapsed));
   renderChats();
 }
 
@@ -655,10 +673,11 @@ function renderChats() {
     return;
   }
 
+  const collapsed = getCollapsedChatSections();
   const groups = {
-    direct: chats.filter(chat => chat.type === 'direct'),
-    group: chats.filter(chat => chat.type === 'group'),
-    channel: chats.filter(chat => chat.type === 'channel')
+    direct: chats.filter(chat => getChatType(chat) === 'direct'),
+    group: chats.filter(chat => getChatType(chat) === 'group'),
+    channel: chats.filter(chat => getChatType(chat) === 'channel')
   };
 
   const sections = [
@@ -671,7 +690,7 @@ function renderChats() {
     const sectionChats = groups[section.key] || [];
     if (!sectionChats.length) continue;
 
-    const isCollapsed = Boolean(state.collapsedChatSections[section.key]);
+    const isCollapsed = Boolean(collapsed[section.key]);
     const header = document.createElement('button');
     header.type = 'button';
     header.className = `chat-section ${isCollapsed ? 'collapsed' : ''}`;
@@ -686,11 +705,12 @@ function renderChats() {
 
     for (const chat of sectionChats) {
       const item = document.createElement('article');
-      item.className = `dialog compact ${Number(chat.id) === Number(state.activeChatId) ? 'active' : ''} chat-kind-${chat.type || 'direct'}`;
+      const chatType = getChatType(chat);
+      item.className = `dialog compact ${Number(chat.id) === Number(state.activeChatId) ? 'active' : ''} chat-kind-${chatType}`;
       item.style.setProperty('--row-index', String(els.chatList.children.length));
       const metaInfo = chatTypeMeta(chat);
       const isOnline = chat.otherUser && state.onlineUserIds.has(Number(chat.otherUser.id));
-      const avatarClass = chat.type === 'group' || chat.type === 'channel' ? 'avatar blue' : 'avatar';
+      const avatarClass = chatType === 'group' || chatType === 'channel' ? 'avatar blue' : 'avatar';
       const preview = chat.lastMessage ? previewText(chat.lastMessage) : 'Нет сообщений';
       const avatarUrl = chat.avatarUrl || chat.otherUser?.avatarUrl || '';
       const onlineClass = isOnline && chat.otherUser?.showOnline !== false ? 'online-dot' : '';
@@ -2228,6 +2248,7 @@ function bindEvents() {
 async function bootstrap() {
   applyTheme();
   bindEvents();
+  getCollapsedChatSections();
   handleAuthLinksFromUrl();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js').catch(() => {});
