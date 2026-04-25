@@ -1,0 +1,43 @@
+{
+  "name": "bubble-messenger-pro",
+  "version": "5.0.0",
+  "description": "Production-oriented realtime web messenger with email verification, password recovery, S3/MinIO media storage, TURN and backups.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development nodemon src/server.js",
+    "check": "node --check src/server.js && node --check src/db.js && node --check src/auth.js && node --check src/socket.js && node --check public/js/app.js",
+    "migrate": "node src/migrate.js",
+    "backup:postgres": "bash scripts/backup-postgres.sh",
+    "backup:media": "bash scripts/backup-media-minio.sh"
+  },
+  "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mime-types": "^2.1.35",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nanoid": "^3.3.7",
+    "pg": "^8.12.0",
+    "redis": "^4.7.0",
+    "socket.io": "^4.7.5",
+    "zod": "^3.23.8",
+    "@aws-sdk/client-s3": "^3.682.0",
+    "nodemailer": "^6.9.15"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
