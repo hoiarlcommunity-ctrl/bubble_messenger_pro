@@ -19,8 +19,7 @@ const state = {
   recordTimerId: null,
   recordKind: 'audio',
   recordCancelled: false,
-  theme: localStorage.getItem('bubble_theme') || 'dark',
-  chatFilter: 'all',
+  theme: localStorage.getItem('bubble_theme') || 'light',
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
   call: {
     active: false,
@@ -101,13 +100,7 @@ const els = {
   muteCallBtn: $('#muteCallBtn'),
   cameraCallBtn: $('#cameraCallBtn'),
   screenCallBtn: $('#screenCallBtn'),
-  endCallBtn: $('#endCallBtn'),
-  activeInfoAvatar: $('#activeInfoAvatar'),
-  activeInfoTitle: $('#activeInfoTitle'),
-  activeInfoStatus: $('#activeInfoStatus'),
-  rightMembers: $('#rightMembers'),
-  rightPins: $('#rightPins'),
-  mediaGrid: $('#mediaGrid')
+  endCallBtn: $('#endCallBtn')
 };
 
 function initials(name = '?') {
@@ -115,10 +108,7 @@ function initials(name = '?') {
 }
 
 function setAvatar(el, name, avatarUrl = '', extraClass = '') {
-  const keep = [];
-  if (el.classList?.contains('mini-avatar') || el.id === 'myAvatar') keep.push('mini-avatar');
-  if (el.classList?.contains('xl-avatar') || el.id === 'activeInfoAvatar') keep.push('xl-avatar');
-  el.className = `avatar ${keep.join(' ')} ${extraClass || ''}`.trim();
+  el.className = `avatar ${extraClass || ''}`.trim();
   el.innerHTML = '';
   if (avatarUrl) {
     const img = document.createElement('img');
@@ -217,7 +207,6 @@ function showApp() {
   els.myStatus.textContent = state.user.statusText || `@${state.user.username}`;
   setAvatar(els.myAvatar, state.user.displayName, state.user.avatarUrl, 'online-dot');
   els.adminBtn.classList.toggle('hidden', !['admin', 'moderator'].includes(state.user.role));
-  renderRightPanel();
 }
 
 function showAuth() {
@@ -227,8 +216,7 @@ function showAuth() {
 
 function applyTheme() {
   document.body.classList.toggle('dark-theme', state.theme === 'dark');
-  document.body.classList.toggle('light-theme', state.theme === 'light');
-  if (els.themeBtn) els.themeBtn.textContent = state.theme === 'dark' ? '☀️ Светлая тема' : '🌙 Тёмная тема';
+  if (els.themeBtn) els.themeBtn.textContent = state.theme === 'dark' ? 'Светлая тема' : 'Тёмная тема';
 }
 
 function toggleTheme() {
@@ -479,16 +467,12 @@ async function loadChats() {
   state.chats = data.chats || [];
   renderChats();
   renderStories();
-  renderRightPanel();
 }
 
 function filteredChats() {
   const q = els.chatSearch.value.trim().toLowerCase();
-  return state.chats.filter(c => {
-    const matchesQuery = !q || (c.title || '').toLowerCase().includes(q) || previewText(c.lastMessage).toLowerCase().includes(q);
-    const matchesFilter = state.chatFilter === 'all' || c.type === state.chatFilter;
-    return matchesQuery && matchesFilter;
-  });
+  if (!q) return state.chats;
+  return state.chats.filter(c => (c.title || '').toLowerCase().includes(q));
 }
 
 function renderChats() {
@@ -504,9 +488,9 @@ function renderChats() {
 
   for (const chat of chats) {
     const item = document.createElement('article');
-    item.className = `dialog type-${chat.type || 'direct'} ${Number(chat.id) === Number(state.activeChatId) ? 'active' : ''}`;
+    item.className = `dialog ${Number(chat.id) === Number(state.activeChatId) ? 'active' : ''}`;
     const isOnline = chat.otherUser && state.onlineUserIds.has(Number(chat.otherUser.id));
-    const avatarClass = chat.type === 'group' || chat.type === 'channel' ? 'avatar blue' : 'avatar';
+    const avatarClass = chat.type === 'group' ? 'avatar blue' : 'avatar';
     const preview = chat.lastMessage ? previewText(chat.lastMessage) : 'Нет сообщений';
     const avatarUrl = chat.avatarUrl || chat.otherUser?.avatarUrl || '';
     const onlineClass = isOnline && chat.otherUser?.showOnline !== false ? 'online-dot' : '';
@@ -571,7 +555,6 @@ async function openChat(chatId) {
   updateActiveHeader();
   renderChats();
   await loadChatDetails(chatId);
-  renderRightPanel();
   if (!state.messages.has(Number(chatId))) {
     const data = await api(`/api/chats/${chatId}/messages`);
     state.messages.set(Number(chatId), data.messages || []);
@@ -579,7 +562,6 @@ async function openChat(chatId) {
   restoreDraft(chatId);
   renderPinnedBar();
   renderMessages();
-  renderRightPanel();
   const msgs = state.messages.get(Number(chatId)) || [];
   const last = msgs[msgs.length - 1];
   if (last) markRead(last.id);
@@ -642,50 +624,6 @@ function renderMessages() {
     els.messageList.appendChild(renderMessageNode(msg, messages));
   }
   els.messageList.scrollTop = els.messageList.scrollHeight;
-  renderRightPanel();
-}
-
-
-function createVoicePlayer(media) {
-  const wrap = document.createElement('div');
-  wrap.className = 'voice-message';
-
-  const play = document.createElement('button');
-  play.className = 'voice-play';
-  play.type = 'button';
-  play.textContent = '▶';
-
-  const waveform = document.createElement('div');
-  waveform.className = 'waveform';
-  const heights = [10, 18, 26, 16, 32, 22, 14, 28, 34, 18, 24, 12, 30, 20, 16, 26, 36, 22, 14, 30, 18, 24, 12, 28];
-  for (const h of heights) {
-    const bar = document.createElement('i');
-    bar.style.height = `${h}px`;
-    waveform.appendChild(bar);
-  }
-
-  const duration = document.createElement('span');
-  duration.className = 'voice-duration';
-  duration.textContent = media.durationSec ? formatDuration(media.durationSec) : '0:00';
-
-  const audio = document.createElement('audio');
-  audio.preload = 'metadata';
-  audio.src = media.url;
-
-  audio.addEventListener('loadedmetadata', () => {
-    if (!media.durationSec && Number.isFinite(audio.duration)) duration.textContent = formatDuration(audio.duration);
-  });
-  audio.addEventListener('play', () => { play.textContent = '❚❚'; });
-  audio.addEventListener('pause', () => { play.textContent = '▶'; });
-  audio.addEventListener('ended', () => { play.textContent = '▶'; });
-
-  play.addEventListener('click', () => {
-    if (audio.paused) audio.play().catch(() => {});
-    else audio.pause();
-  });
-
-  wrap.append(play, waveform, duration, audio);
-  return wrap;
 }
 
 function renderMessageNode(msg, allMessages) {
@@ -709,7 +647,11 @@ function renderMessageNode(msg, allMessages) {
   if (msg.isDeleted) {
     bubble.appendChild(textNode('Сообщение удалено'));
   } else if (msg.type === 'audio' && msg.media) {
-    bubble.appendChild(createVoicePlayer(msg.media));
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.preload = 'metadata';
+    audio.src = msg.media.url;
+    bubble.appendChild(audio);
   } else if (msg.type === 'video' && msg.media) {
     const video = document.createElement('video');
     video.className = 'video-circle';
@@ -928,96 +870,6 @@ async function markRead(messageId) {
     await api(`/api/chats/${state.activeChatId}/read`, { method: 'POST', body: JSON.stringify({ messageId }) });
   } catch (_) {}
 }
-
-
-function renderRightPanel() {
-  if (!els.activeInfoAvatar || !els.activeInfoTitle || !els.activeInfoStatus) return;
-
-  const chat = state.chats.find(c => Number(c.id) === Number(state.activeChatId));
-  if (!chat) {
-    if (state.user) {
-      setAvatar(els.activeInfoAvatar, state.user.displayName, state.user.avatarUrl, 'online-dot');
-      els.activeInfoTitle.textContent = state.user.displayName || 'Профиль';
-      els.activeInfoStatus.textContent = state.user.statusText || `@${state.user.username}`;
-    }
-    if (els.rightMembers) els.rightMembers.innerHTML = '';
-    if (els.rightPins) els.rightPins.innerHTML = '';
-    renderMediaGrid([]);
-    return;
-  }
-
-  const avatarUrl = chat.avatarUrl || chat.otherUser?.avatarUrl || '';
-  const isOnline = chat.otherUser && chat.otherUser.showOnline !== false && state.onlineUserIds.has(Number(chat.otherUser.id));
-  setAvatar(els.activeInfoAvatar, chat.title || 'Чат', avatarUrl, `${chat.type === 'group' || chat.type === 'channel' ? 'blue' : ''} ${isOnline ? 'online-dot' : ''}`);
-  els.activeInfoTitle.textContent = chat.title || 'Чат';
-  if (chat.type === 'direct' && chat.otherUser) {
-    els.activeInfoStatus.textContent = isOnline ? 'онлайн' : (chat.otherUser.showOnline === false ? 'online скрыт' : `был(а): ${fmtTime(chat.otherUser.lastSeen)}`);
-  } else if (chat.type === 'channel') {
-    els.activeInfoStatus.textContent = chat.description || 'канал';
-  } else {
-    els.activeInfoStatus.textContent = 'групповой чат';
-  }
-
-  const detail = state.chatDetails.get(Number(state.activeChatId));
-  if (els.rightMembers) {
-    els.rightMembers.innerHTML = '';
-    const members = detail?.members || [];
-    for (const member of members.slice(0, 8)) {
-      const row = document.createElement('div');
-      const user = member.user || member;
-      const online = state.onlineUserIds.has(Number(user.id || member.userId));
-      row.innerHTML = `${avatarHtml(user.displayName || 'Участник', user.avatarUrl, 'avatar', online ? 'online-dot' : '')}<div><strong>${escapeHtml(user.displayName || 'Участник')}</strong><br><span>${escapeHtml(member.role || (online ? 'онлайн' : 'участник'))}</span></div>`;
-      els.rightMembers.appendChild(row);
-    }
-  }
-
-  if (els.rightPins) {
-    els.rightPins.innerHTML = '';
-    const pins = detail?.pinnedMessages || [];
-    for (const pin of pins.slice(0, 4)) {
-      const row = document.createElement('div');
-      row.innerHTML = `<div class="media">📌</div><div><strong>${escapeHtml(previewMessageBody(pin)).slice(0, 44) || 'Закреп'}</strong><br><span>${fmtTime(pin.createdAt)}</span></div>`;
-      els.rightPins.appendChild(row);
-    }
-  }
-
-  const messages = state.messages.get(Number(state.activeChatId)) || [];
-  renderMediaGrid(messages.filter(m => m.media).slice(-6).reverse());
-}
-
-function renderMediaGrid(mediaMessages) {
-  if (!els.mediaGrid) return;
-  if (!mediaMessages || !mediaMessages.length) {
-    els.mediaGrid.innerHTML = `
-      <div class="media">🎙️</div>
-      <div class="media">📹</div>
-      <div class="media">🖼️</div>
-      <div class="media">📄</div>
-      <div class="media">🔗</div>
-      <div class="media">+24</div>
-    `;
-    return;
-  }
-  els.mediaGrid.innerHTML = '';
-  for (const msg of mediaMessages) {
-    const item = document.createElement('a');
-    item.className = 'media';
-    item.href = msg.media.url;
-    item.target = '_blank';
-    item.rel = 'noopener';
-    if (msg.type === 'image') {
-      item.innerHTML = `<img src="${escapeHtml(msg.media.url)}" alt="${escapeHtml(msg.media.originalName || 'image')}">`;
-    } else if (msg.type === 'video') {
-      item.textContent = '📹';
-    } else if (msg.type === 'audio') {
-      item.textContent = '🎙️';
-    } else {
-      item.textContent = '📄';
-    }
-    els.mediaGrid.appendChild(item);
-  }
-}
-
 
 function renderTyping() {
   const map = state.typingUsers.get(Number(state.activeChatId));
@@ -1985,29 +1837,8 @@ function bindEvents() {
   els.cancelReply.addEventListener('click', clearReply);
   els.backToChats.addEventListener('click', () => { els.appShell.dataset.mobileView = 'list'; });
   els.chatSearch.addEventListener('input', renderChats);
-  $$('.chat-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.chatFilter = btn.dataset.filter || 'all';
-      $$('.chat-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
-      renderChats();
-    });
-  });
-  $$('[data-action="profile"]').forEach(btn => btn.addEventListener('click', openProfileModal));
-  $$('[data-action="close-info"]').forEach(btn => btn.addEventListener('click', () => {
-    document.body.classList.toggle('info-panel-hidden');
-  }));
   els.searchMessagesBtn.addEventListener('click', openSearchMessagesModal);
   els.newChatBtn.addEventListener('click', openNewChatModal);
-  $$('[data-rail]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('[data-rail]').forEach(b => b.classList.toggle('active', b === btn));
-      const rail = btn.dataset.rail;
-      if (rail === 'groups') state.chatFilter = 'group';
-      else state.chatFilter = 'all';
-      $$('.chat-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === state.chatFilter));
-      renderChats();
-    });
-  });
   els.createGroupBtn.addEventListener('click', openCreateGroupModal);
   els.createChannelBtn.addEventListener('click', openCreateChannelModal);
   els.publicChannelsBtn.addEventListener('click', openPublicChannelsModal);

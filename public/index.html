@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#ff3d68" />
+  <meta name="theme-color" content="#ff8a3d" />
   <title>Bubble Messenger Pro</title>
   <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="/css/styles.css" />
@@ -11,15 +11,15 @@
 <body>
   <section id="authScreen" class="auth-screen">
     <div class="auth-card">
-      <div class="auth-logo">▰</div>
+      <div class="auth-logo">☁</div>
       <h1>Bubble Messenger</h1>
-      <p>Современный web-мессенджер с чатами, каналами, звонками, голосовыми, видеокружками и защищённым хранилищем файлов.</p>
+      <p>Realtime web-мессенджер с голосовыми, видеокружками и адаптивным мобильным интерфейсом.</p>
       <div class="auth-tabs">
         <button id="loginTab" class="active" type="button">Вход</button>
         <button id="registerTab" type="button">Регистрация</button>
       </div>
       <form id="loginForm" class="auth-form">
-        <input name="username" placeholder="Логин или email" autocomplete="username" required />
+        <input name="username" placeholder="Логин" autocomplete="username" required />
         <input name="password" placeholder="Пароль" type="password" autocomplete="current-password" required />
         <button type="submit">Войти</button>
         <button id="forgotPasswordBtn" class="auth-link" type="button">Восстановить пароль</button>
@@ -36,52 +36,22 @@
   </section>
 
   <main id="appShell" class="phone-shell hidden" data-mobile-view="list">
-    <aside class="rail">
-      <button class="rail-logo" type="button" title="Bubble">▰</button>
-      <nav class="rail-nav" aria-label="Основная навигация">
-        <button class="rail-item active" type="button" title="Чаты" data-rail="chats">
-          <span class="rail-icon">💬</span><span>Чаты</span>
-        </button>
-        <button class="rail-item" type="button" title="Группы и каналы" data-rail="groups">
-          <span class="rail-icon">👥</span><span>Группы</span>
-        </button>
-        <button class="rail-item" type="button" title="Файлы" data-rail="files">
-          <span class="rail-icon">📁</span><span>Файлы</span>
-        </button>
-        <button class="rail-item" type="button" title="Уведомления" data-rail="notifications">
-          <span class="rail-icon">🔔</span><span>Уведомления</span>
-        </button>
-        <button class="rail-item" type="button" title="Настройки" data-action="profile">
-          <span class="rail-icon">⚙️</span><span>Настройки</span>
-        </button>
-      </nav>
-      <button class="rail-profile" type="button" data-action="profile" title="Профиль">
-        <span id="myAvatar" class="avatar mini-avatar">Я</span>
-      </button>
-    </aside>
-
     <aside class="left">
       <div class="brand">
-        <div>
-          <div class="eyebrow">Messenger Pro</div>
-          <h1>Чаты</h1>
+        <div class="brand-title">
+          <div class="brand-icon">☁</div>
+          Bubble
         </div>
-        <button id="newChatBtn" class="new-chat" title="Новый чат" type="button">+</button>
+        <button id="newChatBtn" class="new-chat" title="Новый чат">+</button>
       </div>
 
       <label class="search">
-        <span>⌕</span>
-        <input id="chatSearch" placeholder="Поиск по чатам" />
+        🔎
+        <input id="chatSearch" placeholder="Найти чат" />
       </label>
 
-      <div class="chat-filter">
-        <button class="chat-filter-btn active" type="button" data-filter="all">Все</button>
-        <button class="chat-filter-btn" type="button" data-filter="direct">Личные</button>
-        <button class="chat-filter-btn" type="button" data-filter="group">Группы</button>
-        <button class="chat-filter-btn" type="button" data-filter="channel">Каналы</button>
-      </div>
+      <div class="stories" id="onlineStories"></div>
 
-      <div class="online-strip" id="onlineStories"></div>
       <section class="dialogs" id="chatList"></section>
     </aside>
 
@@ -89,18 +59,18 @@
       <header class="chat-header">
         <button id="backToChats" class="round-btn mobile-only" type="button">←</button>
         <div class="chat-person">
-          <div id="activeAvatar" class="avatar online-dot">?</div>
+          <div id="activeAvatar" class="avatar online">?</div>
           <div>
             <h1 id="activeTitle">Выберите чат</h1>
             <span id="activeStatus">Список чатов слева</span>
           </div>
         </div>
         <div class="header-actions">
-          <button id="audioCallBtn" class="round-btn" title="Аудиозвонок" type="button">📞</button>
-          <button id="videoCallBtn" class="round-btn" title="Видеозвонок" type="button">🎥</button>
-          <button id="searchMessagesBtn" class="round-btn" title="Поиск по чату" type="button">⌕</button>
-          <button id="profileBtn" class="round-btn" title="Информация" type="button">⋯</button>
-          <button id="logoutBtn" class="round-btn logout" title="Выйти" type="button">⎋</button>
+          <button id="audioCallBtn" class="round-btn" title="Аудиозвонок">📞</button>
+          <button id="videoCallBtn" class="round-btn" title="Видеозвонок">🎥</button>
+          <button id="searchMessagesBtn" class="round-btn" title="Поиск">🔍</button>
+          <button id="profileBtn" class="round-btn" title="Профиль">👤</button>
+          <button id="logoutBtn" class="round-btn" title="Выйти">⎋</button>
         </div>
       </header>
 
@@ -110,7 +80,7 @@
         <div class="empty-state">
           <div>💬</div>
           <h2>Выберите чат или создайте новый</h2>
-          <p>Можно отправлять текст, голосовые, видеокружочки, файлы, реакции и ответы.</p>
+          <p>Можно отправлять текст, голосовые сообщения, видеокружочки, реакции и ответы.</p>
         </div>
       </section>
 
@@ -122,7 +92,7 @@
       <footer class="compose">
         <div id="typingLine" class="typing-line"></div>
         <form id="messageForm" class="compose-card">
-          <button id="emojiBtn" type="button" title="Эмодзи">☺</button>
+          <button id="emojiBtn" type="button" title="Реакции">😊</button>
           <button id="attachBtn" type="button" title="Файл">📎</button>
           <input id="messageInput" placeholder="Напишите сообщение..." autocomplete="off" />
           <button id="voiceBtn" type="button" title="Голосовое">🎙️</button>
@@ -134,56 +104,41 @@
     </section>
 
     <aside class="right" id="rightPanel">
-      <div class="info-head">
-        <h2>Информация</h2>
-        <button class="panel-close" type="button" data-action="close-info">×</button>
-      </div>
-
       <div class="profile-card">
-        <div id="activeInfoAvatar" class="avatar xl-avatar">?</div>
-        <h2 id="activeInfoTitle">Чат не выбран</h2>
-        <p id="activeInfoStatus">Выберите диалог, чтобы увидеть детали</p>
-        <button id="editProfileBtn" class="profile-main-action" type="button">Мой профиль</button>
+        <div id="myAvatar" class="avatar online">Я</div>
+        <h2 id="myName">Профиль</h2>
+        <p id="myStatus">online</p>
+        <div class="mood">✨ Bubble Messenger Pro</div>
       </div>
 
-      <div class="quick-actions">
-        <button id="createGroupBtn" type="button"><span>👥</span><small>Группа</small></button>
-        <button id="createChannelBtn" type="button"><span>📣</span><small>Канал</small></button>
-        <button id="publicChannelsBtn" type="button"><span>⌕</span><small>Каталог</small></button>
-      </div>
+      <div class="side-title">Действия</div>
+      <button id="createGroupBtn" class="wide-action">Создать группу</button>
+      <button id="createChannelBtn" class="wide-action">Создать канал</button>
+      <button id="publicChannelsBtn" class="wide-action">Публичные каналы</button>
+      <button id="savedBtn" class="wide-action">Избранное</button>
+      <button id="themeBtn" class="wide-action">Тёмная тема</button>
+      <button id="editProfileBtn" class="wide-action">Редактировать профиль</button>
+      <button id="adminBtn" class="wide-action hidden">Админка</button>
 
-      <div class="side-title"><span>Действия</span></div>
-      <button id="savedBtn" class="wide-action" type="button">⭐ Избранные сообщения</button>
-      <button id="themeBtn" class="wide-action" type="button">Светлая тема</button>
-      <button id="adminBtn" class="wide-action hidden" type="button">🛡 Админка</button>
-
-      <div class="side-title"><span>Медиа, файлы и ссылки</span><button type="button">Все ›</button></div>
+      <div class="side-title">Общие медиа</div>
       <div class="media-grid" id="mediaGrid">
         <div class="media">🎙️</div>
         <div class="media">📹</div>
         <div class="media">🖼️</div>
         <div class="media">📄</div>
-        <div class="media">🔗</div>
-        <div class="media">+24</div>
+        <div class="media">✨</div>
+        <div class="media">🚀</div>
       </div>
 
-      <div class="side-title"><span>Участники</span></div>
-      <div id="rightMembers" class="mini-list"></div>
-
-      <div class="side-title"><span>Закреплённые сообщения</span></div>
-      <div id="rightPins" class="mini-list"></div>
-
-      <div class="side-title"><span>Мой аккаунт</span></div>
-      <div class="note account-note">
-        <strong id="myName">Профиль</strong>
-        <span id="myStatus">online</span>
-      </div>
+      <div class="side-title">Подсказки</div>
+      <div class="note"><strong>Голосовое</strong><span>Нажмите 🎙️, запишите и отправьте.</span></div>
+      <div class="note"><strong>Видеокружок</strong><span>Нажмите 📹, разрешите камеру и микрофон.</span></div>
     </aside>
   </main>
 
   <section id="recordOverlay" class="record-overlay hidden">
     <div class="record-card">
-      <button id="closeRecord" class="record-close" type="button">×</button>
+      <button id="closeRecord" class="record-close">×</button>
       <h2 id="recordTitle">Запись</h2>
       <div id="recordTimer" class="record-timer">00:00</div>
       <video id="recordPreview" autoplay playsinline muted class="record-video hidden"></video>
@@ -194,6 +149,7 @@
       </div>
     </div>
   </section>
+
 
   <section id="callOverlay" class="call-overlay hidden">
     <div class="call-card">
@@ -214,10 +170,9 @@
       </div>
     </div>
   </section>
-
   <section id="modal" class="modal hidden">
     <div class="modal-card">
-      <button id="modalClose" class="modal-close" type="button">×</button>
+      <button id="modalClose" class="modal-close">×</button>
       <h2 id="modalTitle">Модальное окно</h2>
       <div id="modalBody"></div>
     </div>
