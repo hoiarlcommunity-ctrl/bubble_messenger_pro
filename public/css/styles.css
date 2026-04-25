@@ -653,3 +653,31 @@ body.dark-theme .secondary, body.dark-theme .modal-card .secondary { background:
   padding: 8px 4px 0;
 }
 .auth-link:hover { text-decoration: underline; }
+
+
+/* Hotfix v8: emoji picker */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 10px;
+}
+
+.emoji-choice {
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--paper2, #fff3dd);
+  cursor: pointer;
+  font-size: 24px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.emoji-choice:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(125,70,24,.10);
+}
+
+.dark-theme .emoji-choice {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}

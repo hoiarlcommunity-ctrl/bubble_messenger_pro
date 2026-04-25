@@ -1,4 +1,15 @@
 const $ = (selector) => document.querySelector(selector);
+
+window.addEventListener('error', (event) => {
+  console.error('[frontend:error]', event.error || event.message);
+  try { toast(`Ошибка интерфейса: ${event.message}`); } catch (_) {}
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[frontend:promise]', event.reason);
+  try { toast(`Ошибка запроса: ${event.reason?.message || event.reason}`); } catch (_) {}
+});
+
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const state = {
@@ -70,6 +81,8 @@ const els = {
   themeBtn: $('#themeBtn'),
   pinBar: $('#pinBar'),
   chatSearch: $('#chatSearch'),
+  searchMessagesBtn: $('#searchMessagesBtn'),
+  emojiBtn: $('#emojiBtn'),
   attachBtn: $('#attachBtn'),
   fileInput: $('#fileInput'),
   voiceBtn: $('#voiceBtn'),
@@ -1792,6 +1805,30 @@ async function openAdminModal() {
   });
 }
 
+function openEmojiPicker() {
+  const emojis = ['👍', '❤️', '😂', '🔥', '👏', '😮', '😎', '🙏', '🚀', '✨', '✅', '👀', '🎉', '💬', '📌', '⭐'];
+  openModal('Эмодзи', '');
+  const wrap = document.createElement('div');
+  wrap.className = 'emoji-grid';
+  emojis.forEach((emoji) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-choice';
+    btn.textContent = emoji;
+    btn.addEventListener('click', () => {
+      const start = els.messageInput.selectionStart || els.messageInput.value.length;
+      const end = els.messageInput.selectionEnd || els.messageInput.value.length;
+      els.messageInput.value = `${els.messageInput.value.slice(0, start)}${emoji}${els.messageInput.value.slice(end)}`;
+      els.messageInput.focus();
+      els.messageInput.selectionStart = els.messageInput.selectionEnd = start + emoji.length;
+      saveDraft();
+      closeModal();
+    });
+    wrap.appendChild(btn);
+  });
+  els.modalBody.appendChild(wrap);
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -1834,27 +1871,28 @@ function bindEvents() {
     catch (error) { toast(error.message); }
   });
   els.messageInput.addEventListener('input', () => { notifyTyping(); saveDraft(); });
+  els.emojiBtn?.addEventListener('click', openEmojiPicker);
   els.cancelReply.addEventListener('click', clearReply);
   els.backToChats.addEventListener('click', () => { els.appShell.dataset.mobileView = 'list'; });
   els.chatSearch.addEventListener('input', renderChats);
-  els.searchMessagesBtn.addEventListener('click', openSearchMessagesModal);
-  els.newChatBtn.addEventListener('click', openNewChatModal);
-  els.createGroupBtn.addEventListener('click', openCreateGroupModal);
-  els.createChannelBtn.addEventListener('click', openCreateChannelModal);
-  els.publicChannelsBtn.addEventListener('click', openPublicChannelsModal);
-  els.savedBtn.addEventListener('click', openSavedMessagesModal);
-  els.themeBtn.addEventListener('click', toggleTheme);
-  els.audioCallBtn.addEventListener('click', () => startDirectCall('audio'));
-  els.videoCallBtn.addEventListener('click', () => startDirectCall('video'));
+  els.searchMessagesBtn?.addEventListener('click', openSearchMessagesModal);
+  els.newChatBtn?.addEventListener('click', openNewChatModal);
+  els.createGroupBtn?.addEventListener('click', openCreateGroupModal);
+  els.createChannelBtn?.addEventListener('click', openCreateChannelModal);
+  els.publicChannelsBtn?.addEventListener('click', openPublicChannelsModal);
+  els.savedBtn?.addEventListener('click', openSavedMessagesModal);
+  els.themeBtn?.addEventListener('click', toggleTheme);
+  els.audioCallBtn?.addEventListener('click', () => startDirectCall('audio'));
+  els.videoCallBtn?.addEventListener('click', () => startDirectCall('video'));
   els.acceptCallBtn.addEventListener('click', acceptIncomingCall);
   els.rejectCallBtn.addEventListener('click', () => state.call.incoming ? rejectIncomingCall() : endCall(true));
   els.endCallBtn.addEventListener('click', () => endCall(true));
   els.muteCallBtn.addEventListener('click', toggleCallMute);
   els.cameraCallBtn.addEventListener('click', toggleCallCamera);
   els.screenCallBtn.addEventListener('click', shareScreen);
-  els.editProfileBtn.addEventListener('click', openProfileModal);
-  els.profileBtn.addEventListener('click', openChatInfoModal);
-  els.adminBtn.addEventListener('click', openAdminModal);
+  els.editProfileBtn?.addEventListener('click', openProfileModal);
+  els.profileBtn?.addEventListener('click', openChatInfoModal);
+  els.adminBtn?.addEventListener('click', openAdminModal);
   els.logoutBtn.addEventListener('click', async () => {
     await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
     localStorage.removeItem('bubble_access_token');
