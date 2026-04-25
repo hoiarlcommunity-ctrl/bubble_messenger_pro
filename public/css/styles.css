@@ -1920,3 +1920,257 @@ body.dark-theme .me .reactions.reactions-above .reaction-chip {
   50% { transform: translateX(0) scaleX(1); opacity: .9; }
   100% { transform: translateX(24px) scaleX(.45); opacity: .35; }
 }
+
+
+
+/* v17: ultra dense mobile/desktop chat list rows */
+.dialogs {
+  gap: 1px !important;
+  padding-right: 0 !important;
+}
+
+.chat-section {
+  min-height: 10px !important;
+  height: 12px !important;
+  padding: 0 4px !important;
+  margin: 2px 0 1px !important;
+  border-radius: 4px !important;
+  line-height: 1 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.chat-section-label {
+  gap: 3px !important;
+  font-size: 7px !important;
+  line-height: 10px !important;
+  letter-spacing: .045em !important;
+}
+
+.section-chevron {
+  width: 7px !important;
+  font-size: 8px !important;
+  line-height: 8px !important;
+}
+
+.chat-section-count {
+  min-width: 11px !important;
+  height: 11px !important;
+  padding: 0 3px !important;
+  font-size: 7px !important;
+  line-height: 11px !important;
+  box-shadow: none !important;
+}
+
+.dialog,
+.dialog.compact {
+  min-height: 38px !important;
+  height: 38px !important;
+  max-height: 38px !important;
+  padding: 3px 6px !important;
+  margin: 0 !important;
+  border-radius: 10px !important;
+  grid-template-columns: 28px minmax(0, 1fr) max-content !important;
+  gap: 6px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+.dialog:hover,
+.dialog.active,
+.dialog.compact:hover,
+.dialog.compact.active {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.dialog .avatar,
+.dialog.compact .avatar {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+.dialog-main,
+.dialog > div:nth-child(2) {
+  min-width: 0 !important;
+  height: 28px !important;
+  max-height: 28px !important;
+  overflow: hidden !important;
+  align-self: center !important;
+}
+
+.dialog-title-row {
+  height: 14px !important;
+  max-height: 14px !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.dialog strong,
+.dialog.compact strong {
+  font-size: 10px !important;
+  line-height: 12px !important;
+  height: 12px !important;
+  max-height: 12px !important;
+  margin: 0 !important;
+}
+
+.dialog p,
+.dialog.compact p {
+  font-size: 8px !important;
+  line-height: 10px !important;
+  height: 10px !important;
+  max-height: 10px !important;
+  margin: 1px 0 0 !important;
+  opacity: .72 !important;
+}
+
+.chat-kind-badge {
+  max-width: 42px !important;
+  height: 12px !important;
+  padding: 0 4px !important;
+  font-size: 7px !important;
+  line-height: 12px !important;
+  border-radius: 999px !important;
+}
+
+.dialog-meta,
+.dialog.compact .dialog-meta {
+  min-width: 27px !important;
+  max-width: 36px !important;
+  height: 28px !important;
+  max-height: 28px !important;
+  gap: 1px !important;
+  font-size: 7px !important;
+  line-height: 8px !important;
+  align-content: center !important;
+  align-self: center !important;
+}
+
+.dialog-meta span:first-child,
+.dialog.compact .dialog-meta span:first-child {
+  max-width: 36px !important;
+  height: 8px !important;
+  line-height: 8px !important;
+}
+
+.count,
+.dialog.compact .count {
+  min-width: 13px !important;
+  height: 13px !important;
+  padding: 0 4px !important;
+  font-size: 7px !important;
+  line-height: 13px !important;
+}
+
+@media (max-width: 780px) {
+  .left {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .dialogs {
+    gap: 1px !important;
+  }
+
+  .chat-section {
+    height: 10px !important;
+    min-height: 10px !important;
+    padding: 0 2px !important;
+    margin: 1px 0 !important;
+  }
+
+  .chat-section-label {
+    font-size: 7px !important;
+    line-height: 9px !important;
+  }
+
+  .chat-section-count {
+    min-width: 10px !important;
+    height: 10px !important;
+    font-size: 7px !important;
+    line-height: 10px !important;
+  }
+
+  .dialog,
+  .dialog.compact {
+    min-height: 34px !important;
+    height: 34px !important;
+    max-height: 34px !important;
+    padding: 2px 5px !important;
+    border-radius: 9px !important;
+    grid-template-columns: 26px minmax(0, 1fr) max-content !important;
+    gap: 6px !important;
+  }
+
+  .dialog .avatar,
+  .dialog.compact .avatar {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    border-radius: 9px !important;
+    font-size: 9px !important;
+  }
+
+  .dialog-main,
+  .dialog > div:nth-child(2) {
+    height: 25px !important;
+    max-height: 25px !important;
+  }
+
+  .dialog-title-row {
+    height: 13px !important;
+    max-height: 13px !important;
+  }
+
+  .dialog strong,
+  .dialog.compact strong {
+    font-size: 10px !important;
+    line-height: 11px !important;
+    height: 11px !important;
+  }
+
+  .dialog p,
+  .dialog.compact p {
+    font-size: 8px !important;
+    line-height: 9px !important;
+    height: 9px !important;
+    margin-top: 1px !important;
+  }
+
+  .chat-kind-badge {
+    max-width: 38px !important;
+    height: 11px !important;
+    padding: 0 3px !important;
+    font-size: 7px !important;
+    line-height: 11px !important;
+  }
+
+  .dialog-meta,
+  .dialog.compact .dialog-meta {
+    min-width: 25px !important;
+    max-width: 33px !important;
+    height: 25px !important;
+    max-height: 25px !important;
+    font-size: 7px !important;
+    line-height: 8px !important;
+  }
+
+  .count,
+  .dialog.compact .count {
+    min-width: 12px !important;
+    height: 12px !important;
+    padding: 0 3px !important;
+    font-size: 7px !important;
+    line-height: 12px !important;
+  }
+}
