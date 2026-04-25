@@ -1433,3 +1433,161 @@ body.dark-theme .chat-kind-channel .chat-kind-badge {
   border-color: rgba(255, 118, 194, .22);
   color: #ff9bcf;
 }
+
+
+
+/* v12: ultra compact chat cards + collapsible sections */
+.dialogs {
+  gap: 4px;
+}
+
+.chat-section {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  padding: 5px 4px 3px;
+  margin: 5px 0 1px;
+  border-radius: 10px;
+}
+
+.chat-section:hover {
+  background: rgba(255,255,255,.46);
+}
+
+.chat-section-label {
+  gap: 5px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.section-chevron {
+  width: 12px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--orange);
+  transition: transform .16s ease;
+}
+
+.chat-section.collapsed .section-chevron {
+  transform: rotate(0deg);
+}
+
+.chat-section-count {
+  min-width: 19px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 10px;
+}
+
+.dialog.compact {
+  min-height: 38px;
+  padding: 4px 7px;
+  border-radius: 13px;
+  grid-template-columns: 32px minmax(0, 1fr) max-content;
+  gap: 7px;
+}
+
+.dialog.compact .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.dialog-title-row {
+  gap: 5px;
+  margin-bottom: 1px;
+}
+
+.dialog.compact strong {
+  font-size: 11px;
+  line-height: 1.08;
+}
+
+.dialog.compact p {
+  font-size: 10px;
+  line-height: 1.08;
+  opacity: .86;
+}
+
+.chat-kind-badge {
+  max-width: 60px;
+  padding: 2px 5px;
+  font-size: 8px;
+  border-radius: 999px;
+}
+
+.dialog.compact .dialog-meta {
+  min-width: 32px;
+  max-width: 44px;
+  gap: 2px;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.dialog.compact .dialog-meta span:first-child {
+  max-width: 42px;
+}
+
+.dialog.compact .count {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  font-size: 9px;
+}
+
+.dialog.compact:hover,
+.dialog.compact.active {
+  box-shadow: 0 8px 18px rgba(125,70,24,.07);
+}
+
+.dialog.compact.active {
+  background: white;
+}
+
+body.dark-theme .chat-section:hover {
+  background: rgba(255,255,255,.055);
+}
+
+@media (max-width: 780px) {
+  .dialogs {
+    gap: 4px;
+  }
+
+  .chat-section {
+    padding: 5px 3px 2px;
+    margin-top: 4px;
+  }
+
+  .dialog.compact {
+    min-height: 36px;
+    padding: 4px 7px;
+    border-radius: 12px;
+    grid-template-columns: 30px minmax(0, 1fr) max-content;
+    gap: 7px;
+  }
+
+  .dialog.compact .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 11px;
+    font-size: 11px;
+  }
+
+  .dialog.compact strong {
+    font-size: 11px;
+  }
+
+  .dialog.compact p {
+    font-size: 10px;
+  }
+
+  .chat-kind-badge {
+    max-width: 54px;
+    padding: 2px 4px;
+    font-size: 8px;
+  }
+}

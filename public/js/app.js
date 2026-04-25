@@ -631,6 +631,13 @@ function chatTypeMeta(chat) {
   return { key: 'direct', title: 'Пользователи', badge: 'Личка', icon: '👤' };
 }
 
+
+function toggleChatSection(key) {
+  state.collapsedChatSections[key] = !state.collapsedChatSections[key];
+  localStorage.setItem('bubble_collapsed_chat_sections', JSON.stringify(state.collapsedChatSections));
+  renderChats();
+}
+
 function filteredChats() {
   const q = els.chatSearch.value.trim().toLowerCase();
   if (!q) return state.chats;
@@ -664,10 +671,18 @@ function renderChats() {
     const sectionChats = groups[section.key] || [];
     if (!sectionChats.length) continue;
 
-    const header = document.createElement('div');
-    header.className = 'chat-section';
-    header.innerHTML = `<span class="chat-section-label">${section.icon} ${escapeHtml(section.title)}</span><span class="chat-section-count">${sectionChats.length}</span>`;
+    const isCollapsed = Boolean(state.collapsedChatSections[section.key]);
+    const header = document.createElement('button');
+    header.type = 'button';
+    header.className = `chat-section ${isCollapsed ? 'collapsed' : ''}`;
+    header.innerHTML = `
+      <span class="chat-section-label"><span class="section-chevron">${isCollapsed ? '›' : '⌄'}</span>${section.icon} ${escapeHtml(section.title)}</span>
+      <span class="chat-section-count">${sectionChats.length}</span>
+    `;
+    header.addEventListener('click', () => toggleChatSection(section.key));
     els.chatList.appendChild(header);
+
+    if (isCollapsed) continue;
 
     for (const chat of sectionChats) {
       const item = document.createElement('article');
